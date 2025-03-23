@@ -1,0 +1,48 @@
+falco:
+  http_output:
+    enabled: true
+    url: "http://10.128.0.2:2808/falco"
+  json_output: true
+plugins:
+  - name: hubble
+    library_path: "/usr/share/falco/plugins/hubble.so"
+    init_config: ""
+    open_params: ""
+load_plugins:
+  - hubble
+collectors:
+  containerd:
+    enabled: true
+    socket: /run/k3s/containerd/containerd.sock
+driver:
+  kind: "ebpf"
+customRules:
+  ssh-rule: |-
+    - rule: Detect Failed SSH Login Attempts
+      desc: Detect Failed SSH Login Attempts
+      condition: > 
+        (proc.name = sshd and evt.type = exit and evt.res != 0)
+        or (evt.type = accept and evt.dir = < and proc.name = sshd and fd.typechar = "4" and evt.res < 0)
+        or (evt.type = accept and proc.name = sshd and fd.sport = 22 and fd.cip != "10.42.0.12" and fd.cip != "10.42.0.1" and fd.cip != "127.0.0.1" and fd.cip != "0.0.0.0" and fd.cip != "::1" and container.id != host)
+      output: >
+        Failed SSH login attempt detected (user=%user.name pid=%proc.pid command=%proc.cmdline client=%fd.cip server=%fd.sip evt_res=%evt.res source.ip=%fd.sip, source.port=%fd.sport, dest.ip=%fd.rip, dest.port=%fd.rport, user=%user.name, process=%proc.name)
+      priority: WARNING
+      enabled: true
+    - rule: Hubble External Connection
+      desc: Detect connections to external IP addresses.
+      condition: >
+        hubble.traffic_direction = "INCOMING"
+      output: >
+      External connection detected!
+        Event_type=%hubble.event_type, 
+        Source_IP=%hubble.source_ip, 
+        Destination_IP=%hubble.destination_ip,
+        Traffic_Direction=%hubble.traffic_direction,
+        Flow_Type=%hubble.flow_type,
+        Pod_Name=%hubble.pod_name,
+        Verdict=%hubble.verdict, 
+        Summary=%hubble.summary
+      priority: NOTICE
+      source: hubble
+      tags: [network, hubble, kubernetes]
+      enabled: true

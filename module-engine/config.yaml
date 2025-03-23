@@ -1,0 +1,43 @@
+server:
+  port: 2808
+  dashboard_port: 2809
+  aliases:
+    falco: "/falco"
+    cilium: "/monitoring"
+
+scenarios:
+  block_ip:
+    rule: "Detect Failed SSH Login Attempts"
+    params:
+      trigger_count: 3 # Кількість спрацьовувань
+      trigger_window: 60 # Вікно в секундах (1 година)
+      unblock_after: 10 # Час блокування в minutes
+    action:    
+      actioners:
+        - gcp_firewall
+        - gcp_storage
+        - sigmahq
+      notifier:
+        enabled: true
+        name: "slack"
+        timeout: 1 # у хвилинах
+
+actioners:
+  gcp_firewall:
+    project_id: "honeypotproject-00000"
+    credentials_file: "/home/username/firewall.json"
+  gcp_storage:
+    project_id: "honeypotproject-00000"
+    bucket_name: "responseengine-bucket"
+    log_count: 100
+    credentials_file: "/home/username/storage.json"
+  sigmahq:
+    bucket_name: "responseengine-bucket"
+    credentials_file: "home/username/storage.json"
+
+notifier:
+  slack:
+    webhook_url: "https://hooks.slack.com/services/XXXX/XXXX"
+    callback_url: "http://hostname:2808/slack/callback"
+    bot_token: "xoxb-XXXXXXXXXXX-XXXDddddddd"
+    channel: "C0XXXXXX"
