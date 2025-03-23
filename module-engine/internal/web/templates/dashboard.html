@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Response Engine Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4970c3;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .blocked {
+            color: #d75f44;
+            font-weight: bold;
+        }
+        .not-blocked {
+            color: #6eac71;
+            font-weight: bold;
+        }
+        .unblock-btn {
+            background-color: #d75f44;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .unblock-btn:hover {
+            background-color: #d75f44;
+        }
+    </style>
+</head>
+<body>
+    <h1>Response Engine Dashboard</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>IP</th>
+                <th>Status</th>
+                <th>Blocked At</th>
+                <th>Unblock After</th>
+                <th>Block Count</th>
+                <th>Trigger Count</th>
+                <th>Last Event Time</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .}}
+            <tr>
+                <td>{{.ID}}</td>
+                <td>{{.IP}}</td>
+                <td class="{{if eq .Status "Blocked"}}blocked{{else}}not-blocked{{end}}">{{.Status}}</td>
+                <td>{{.BlockedAt}}</td>
+                <td>{{.UnblockAfter}}</td>
+                <td>{{.BlockCount}}</td>
+                <td>{{.TriggerCount}}</td>
+                <td>{{.LastEventTime}}</td>
+                <td>
+                    {{if eq .Status "Blocked"}}
+                    <form method="POST" action="/unblock">
+                        <input type="hidden" name="ip" value="{{.IP}}">
+                        <button type="submit" class="unblock-btn">Unblock</button>
+                    </form>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</body>
+</html>

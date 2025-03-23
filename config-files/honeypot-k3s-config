@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cowrie-pod
+  labels:
+    app: cowrie
+spec:
+  containers:
+  - name: cowrie-container
+    image: registry.net/cowrie:latest
+    ports:
+    - containerPort: 2222
+      protocol: TCP
+      # Порт для імітації SSH-сервісу як частини пастки
+    - containerPort: 1000 # відкритий неіснуючий порт привабливості для пастки
+      protocol: TCP
+      # Додатковий порт, який не відповідає реальному сервісу, для залучення зловмисників
+    securityContext:
+      privileged: false  # Вимкнено, щоб уникнути прямого доступу до хоста
+      # Забезпечує безпеку, обмежуючи доступ до ресурсів хоста
+      runAsUser: 0  # root користувач
+      # Контейнер працює від імені root для повного контролю всередині
+      runAsGroup: 0 # root група
+      # Група root для відповідності користувачу
+      allowPrivilegeEscalation: true  # Дозволяє піднімати привілеї користувачу
+      # Дозволяє процесам у контейнері підвищувати свої права за потреби
+      capabilities:
+        add:
+        - NET_ADMIN  # Маніпуляція мережею всередині контейнера
+          # Дозволяє керувати мережевими налаштуваннями для імітації поведінки
+        - SYS_PTRACE # Відстеження процесів у контейнері
+          # Можливість відстежувати й дебагувати процеси для аналізу
+        - SYS_ADMIN # Адміністртивні функції в межах контейнера
+          # Надає розширені адміністративні права в контейнері
+      readOnlyRootFilesystem: false  # Дозволяє запис
+      # Дозволяє запис у кореневу файлову систему для функціонування пастки
+  env:
+    - name: API_KEY
+      value: "APINOTREALKEY"  # Фальшивий ключ для пастки
+      # Використовується як приманка для зловмисників
+  hostNetwork: false  # Ізоляція від хост-мережі
+  # Захищає хост від прямого впливу контейнера
+  hostPID: false  # Ізоляція від хост-процесів
+  # Запобігає доступу до простору процесів хоста
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cowrie-service
+spec:
+  selector:
+    app: cowrie
+  ports:
+  - name: ssh
+    port: 2222
+    targetPort: 2222
+    nodePort: 2222
+    protocol: TCP
+    # Налаштування порту для імітації SSH-доступу
+  - name: notreal
+    port: 1000
+    targetPort: 1000
+    nodePort: 1000
+    protocol: TCP
+    # Налаштування фальшивого порту для приваблення атак
+  type: NodePort
+  # Тип сервісу, що відкриває порти на вузлі для зовнішнього доступу
